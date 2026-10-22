@@ -9,7 +9,7 @@
  * NUXT_PUBLIC_STUDIO_REPOSITORY_* environment variables instead.
  */
 export interface RepositoryDetection {
-  provider?: 'github' | 'gitlab'
+  provider?: 'github' | 'gitlab' | 'forgejo'
   owner?: string
   repo?: string
   branch?: string
@@ -38,6 +38,18 @@ export function detectRepositoryFromCI(): RepositoryDetection | undefined {
         repo: match[2],
         branch: process.env.BRANCH,
       }
+    }
+  }
+
+  // Forgejo/Gitea Actions (checked first, they also set GITHUB_ACTIONS)
+  if ((process.env.FORGEJO_ACTIONS || process.env.GITEA_ACTIONS) && process.env.GITHUB_REPOSITORY?.includes('/')) {
+    const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/') as [string, string]
+    return {
+      provider: 'forgejo',
+      owner,
+      repo,
+      branch: process.env.GITHUB_REF_NAME,
+      instanceUrl: process.env.GITHUB_SERVER_URL,
     }
   }
 
