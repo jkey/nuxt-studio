@@ -1,7 +1,7 @@
 import type { DraftStatus } from './draft'
 import type { StudioFeature } from '../types'
 
-export type GitProviderType = 'github' | 'gitlab'
+export type GitProviderType = 'github' | 'gitlab' | 'forgejo'
 
 export interface Repository {
   provider: GitProviderType | null
@@ -29,6 +29,13 @@ export interface GitOptions extends GitBaseOptions {
   rootDir: string
   token: string
   instanceUrl?: string
+  /**
+   * Returns a fresh access token (used by providers to retry a request after a 401).
+   * Called once when a request fails with a 401, to obtain a new access token for a single
+   * retry. Returns `null` when the token cannot be refreshed (e.g. no refresh token stored,
+   * or the refresh itself failed), in which case the original 401 is surfaced as-is.
+   */
+  refreshToken?: () => Promise<string | null>
 }
 
 export interface CommitFilesOptions extends GitBaseOptions {
@@ -88,4 +95,10 @@ export interface GitLabFile extends GitFile {
   blob_id: string
   commit_id: string
   last_commit_id: string
+}
+
+export interface ForgejoFile extends GitFile {
+  html_url: string
+  download_url: string
+  type: string
 }
