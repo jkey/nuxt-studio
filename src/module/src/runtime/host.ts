@@ -190,6 +190,18 @@ export function useStudioHost(user: StudioUser, repository: Repository): StudioH
     repository,
     user: {
       get: () => user,
+      refreshAccessToken: async () => {
+        try {
+          const response = await $fetch<{ accessToken: string }>('/__nuxt_studio/auth/session/refresh', {
+            method: 'POST',
+          })
+          user.accessToken = response.accessToken
+          return response.accessToken
+        }
+        catch {
+          return null
+        }
+      },
     },
     document: {
       db: {

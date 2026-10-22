@@ -136,7 +136,9 @@ export default eventHandler(async (event: H3Event) => {
   const provider = studioConfig?.repository.provider
   const repositoryToken = provider === 'github'
     ? studioConfig?.git?.githubToken
-    : studioConfig?.git?.gitlabToken
+    : provider === 'forgejo'
+      ? studioConfig?.git?.forgejoToken
+      : studioConfig?.git?.gitlabToken
   if (provider === 'github' && !repositoryToken) {
     throw createError({
       statusCode: 500,
@@ -147,6 +149,12 @@ export default eventHandler(async (event: H3Event) => {
     throw createError({
       statusCode: 500,
       message: '`NUXT_STUDIO_GIT_GITLAB_TOKEN` is not set. Google authenticated users cannot push changes to the repository without a valid GitLab token.',
+    })
+  }
+  if (provider === 'forgejo' && !repositoryToken) {
+    throw createError({
+      statusCode: 500,
+      message: '`NUXT_STUDIO_GIT_FORGEJO_TOKEN` is not set. Google authenticated users cannot push changes to the repository without a valid Forgejo token.',
     })
   }
 

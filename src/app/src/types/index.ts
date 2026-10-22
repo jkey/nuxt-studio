@@ -108,6 +108,12 @@ export interface StudioHost {
   }
   user: {
     get: () => StudioUser
+    /**
+     * Refresh the current user's access token (e.g. an expired Forgejo OAuth token) and
+     * update it in-memory. Resolves to the new access token, or `null` if the refresh
+     * failed (never throws).
+     */
+    refreshAccessToken?: () => Promise<string | null>
   }
   app: {
     getManifestId: () => Promise<string>

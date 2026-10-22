@@ -9,6 +9,7 @@ export function validateAuthConfig(options: ModuleOptions): void {
 
   const hasGitHubAuth = options.auth?.github?.clientId && options.auth?.github?.clientSecret
   const hasGitLabAuth = options.auth?.gitlab?.applicationId && options.auth?.gitlab?.applicationSecret
+  const hasForgejoAuth = options.auth?.forgejo?.clientId && options.auth?.forgejo?.clientSecret
   const hasGoogleAuth = options.auth?.google?.clientId && options.auth?.google?.clientSecret
   const hasSSOServer = options.auth?.sso?.serverUrl && options.auth?.sso?.clientId && options.auth?.sso?.clientSecret
 
@@ -32,7 +33,7 @@ export function validateAuthConfig(options: ModuleOptions): void {
     ].join(' '))
   }
   else {
-    const hasProviderAuth = provider === 'github' ? hasGitHubAuth : hasGitLabAuth
+    const hasProviderAuth = provider === 'github' ? hasGitHubAuth : provider === 'forgejo' ? hasForgejoAuth : hasGitLabAuth
     if (!hasProviderAuth) {
       logger.warn([
         'In order to use Studio in production mode, you need to setup authentication:',
