@@ -1,7 +1,7 @@
 import type { DraftStatus } from './draft'
 import type { StudioFeature } from '../types'
 
-export type GitProviderType = 'github' | 'gitlab'
+export type GitProviderType = 'github' | 'gitlab' | 'forgejo'
 
 export interface Repository {
   provider: GitProviderType | null
@@ -88,4 +88,10 @@ export interface GitLabFile extends GitFile {
   blob_id: string
   commit_id: string
   last_commit_id: string
+}
+
+export interface ForgejoFile extends GitFile {
+  html_url: string
+  download_url: string
+  type: string
 }

@@ -60,7 +60,7 @@ const extraActions = computed<DropdownMenuItem[]>(() => {
       if (feature) {
         actions.push({
           label: t(`studio.actions.labels.openGitProvider`, { providerName: gitProvider.name }),
-          icon: provider === 'gitlab' ? 'i-simple-icons:gitlab' : 'i-simple-icons:github',
+          icon: provider === 'gitlab' ? 'i-simple-icons:gitlab' : provider === 'forgejo' ? 'i-simple-icons:forgejo' : 'i-simple-icons:github',
           to: gitProvider.api.getFileUrl(feature, item.value.fsPath),
           target: '_blank',
         })
