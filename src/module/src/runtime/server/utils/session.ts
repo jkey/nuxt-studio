@@ -22,7 +22,9 @@ export async function setStudioUserSession(event: H3Event, userSession: StudioUs
       ? config.studio?.git?.githubToken
       : provider === 'gitlab'
         ? config.studio?.git?.gitlabToken
-        : null
+        : provider === 'forgejo'
+          ? config.studio?.git?.forgejoToken
+          : null
 
   if (!accessToken) {
     throw createError({
