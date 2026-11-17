@@ -17,8 +17,11 @@ export default eventHandler(async (event) => {
     deleteCookie(event, 'studio-session-check', { path: '/' })
   }
 
+  // OAuth tokens (e.g. a Forgejo refresh token) must never reach the client
+  const { oauth: _oauth, ...data } = session.data
+
   return {
-    ...session.data,
+    ...data,
     id: session.id!,
   }
 })

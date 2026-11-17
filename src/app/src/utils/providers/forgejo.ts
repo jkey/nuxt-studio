@@ -21,6 +21,13 @@ export function createForgejoProvider(options: GitOptions): GitProviderAPI {
   const { owner, repo, token, branch, rootDir, authorName, authorEmail } = options
   const gitFiles: Record<string, GitFile> = {}
 
+  // Mutable so a 401 retry (see `request` below) can swap it between requests.
+  let currentToken = token
+
+  // Shared in-flight refresh: a burst of requests hitting an expired token must
+  // trigger exactly one `refreshToken()` call, not one per request.
+  let refreshing: Promise<string | null> | null = null
+
   const instanceUrl = withoutTrailingSlash(options.instanceUrl || 'https://codeberg.org')
 
   const $api = ofetch.create({
@@ -37,15 +44,46 @@ export function createForgejoProvider(options: GitOptions): GitProviderAPI {
     return path.split('/').map(encodeURIComponent).join('/')
   }
 
+  function authHeaders(): Record<string, string> {
+    return { Authorization: `Bearer ${currentToken}` }
+  }
+
   /**
-   * Perform an authenticated request against the Forgejo API.
+   * Perform an authenticated request against the Forgejo API, transparently retrying
+   * once with a freshly refreshed token when the server responds with 401.
+   *
+   * Concurrent 401s share a single in-flight refresh (`refreshing`): the first caller
+   * to see a 401 starts the refresh, every other caller awaits that same promise
+   * instead of starting its own. If the refresh fails (returns `null`), the original
+   * 401 error is re-thrown rather than retrying forever.
    *
    * @param url - Request path, relative to the repo API base URL
-   * @param opts - Additional ofetch options (query, method, body, ...); `Authorization` is always set from the token
+   * @param opts - Additional ofetch options (query, method, body, ...); `Authorization` is always set from the current token
    * @returns The parsed response body
    */
   async function request(url: string, opts: ApiOptions = {}) {
-    return await $api(url, { ...opts, headers: { Authorization: `Bearer ${token}` } })
+    try {
+      return await $api(url, { ...opts, headers: authHeaders() })
+    }
+    catch (error) {
+      if ((error as { status?: number })?.status !== 401 || !options.refreshToken) {
+        throw error
+      }
+
+      refreshing ??= options.refreshToken().finally(() => {
+        refreshing = null
+      })
+
+      const refreshedToken = await refreshing
+
+      if (!refreshedToken) {
+        throw error
+      }
+
+      currentToken = refreshedToken
+
+      return await $api(url, { ...opts, headers: authHeaders() })
+    }
   }
 
   /**
@@ -135,7 +173,7 @@ export function createForgejoProvider(options: GitOptions): GitProviderAPI {
   }
 
   async function commitFiles(files: RawFile[], message: string): Promise<CommitResult | null> {
-    if (!token) {
+    if (!currentToken) {
       return null
     }
 

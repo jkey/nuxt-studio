@@ -60,11 +60,15 @@ export async function setInternalStudioUserSession(event: H3Event, user: StudioU
     },
   })
 
-  const payload = defu({
-    user: {
-      ...user,
-    },
-  }, session.data)
+  // A new login drops OAuth tokens stored for a previous login (see oauth-session.ts)
+  const payload = {
+    ...defu({
+      user: {
+        ...user,
+      },
+    }, session.data),
+    oauth: null,
+  }
 
   await session.update(payload)
 

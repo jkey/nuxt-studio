@@ -71,6 +71,57 @@ describe('createForgejoProvider / fetchFile', () => {
 
     expect(file).toBeNull()
   })
+
+  it('retries once with refreshed token after 401', async () => {
+    handlers['/contents/content/a.md'] = (_url, options) => {
+      const authorization = (options?.headers as Record<string, string> | undefined)?.Authorization
+      if (authorization === 'Bearer tok') {
+        return Promise.reject({ status: 401 })
+      }
+      return { name: 'a.md', path: 'content/a.md', sha: 's1', size: 1, html_url: 'h', content: 'YQ==', encoding: 'base64' }
+    }
+
+    const refreshToken = vi.fn().mockResolvedValue('new')
+    const file = await createForgejoProvider({ ...baseGitOptions, refreshToken }).fetchFile('content/a.md')
+
+    expect(file?.sha).toBe('s1')
+    expect(refreshToken).toHaveBeenCalledTimes(1)
+  })
+
+  it('shares a single refresh across parallel 401s', async () => {
+    for (const name of ['a', 'b', 'c']) {
+      handlers[`/contents/content/${name}.md`] = (_url, options) => {
+        const authorization = (options?.headers as Record<string, string> | undefined)?.Authorization
+        if (authorization === 'Bearer tok') {
+          return Promise.reject({ status: 401 })
+        }
+        return { name: `${name}.md`, path: `content/${name}.md`, sha: `s-${name}`, size: 1, html_url: 'h', content: 'YQ==', encoding: 'base64' }
+      }
+    }
+
+    const refreshToken = vi.fn().mockResolvedValue('new')
+    const provider = createForgejoProvider({ ...baseGitOptions, refreshToken })
+
+    const files = await Promise.all([
+      provider.fetchFile('content/a.md'),
+      provider.fetchFile('content/b.md'),
+      provider.fetchFile('content/c.md'),
+    ])
+
+    expect(files.map(file => file?.sha)).toEqual(['s-a', 's-b', 's-c'])
+    expect(refreshToken).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not loop when refresh fails', async () => {
+    handlers['/contents/content/a.md'] = () => Promise.reject({ status: 401 })
+
+    const refreshToken = vi.fn().mockResolvedValue(null)
+    const file = await createForgejoProvider({ ...baseGitOptions, refreshToken }).fetchFile('content/a.md')
+
+    expect(file).toBeNull()
+    expect(refreshToken).toHaveBeenCalledTimes(1)
+    expect(mock$api).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('createForgejoProvider / commitFiles', () => {

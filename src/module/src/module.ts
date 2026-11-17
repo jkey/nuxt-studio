@@ -783,6 +783,12 @@ export default defineNuxtModule<ModuleOptions>({
     })
 
     addServerHandler({
+      method: 'post',
+      route: '/__nuxt_studio/auth/session/refresh',
+      handler: runtime('./server/routes/auth/session-refresh.post'),
+    })
+
+    addServerHandler({
       route: options.route as string,
       handler: runtime('./server/routes/admin'),
     })

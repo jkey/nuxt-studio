@@ -29,6 +29,13 @@ export interface GitOptions extends GitBaseOptions {
   rootDir: string
   token: string
   instanceUrl?: string
+  /**
+   * Returns a fresh access token (used by providers to retry a request after a 401).
+   * Called once when a request fails with a 401, to obtain a new access token for a single
+   * retry. Returns `null` when the token cannot be refreshed (e.g. no refresh token stored,
+   * or the refresh itself failed), in which case the original 401 is surfaced as-is.
+   */
+  refreshToken?: () => Promise<string | null>
 }
 
 export interface CommitFilesOptions extends GitBaseOptions {

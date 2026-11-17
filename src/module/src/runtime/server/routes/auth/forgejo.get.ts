@@ -4,8 +4,9 @@ import { createError, deleteCookie, eventHandler, getCookie, getQuery, getReques
 import { withQuery } from 'ufo'
 import { generateOAuthState, validateOAuthState } from '../../utils/auth'
 import { setInternalStudioUserSession } from '../../utils/session'
+import { setStudioOAuthTokens } from '../../utils/oauth-session'
 import { mergeConfig } from '../../utils/object'
-import { fetchForgejoUser, getForgejoInstanceUrl, requestForgejoToken } from '../../utils/forgejo'
+import { computeExpiresAt, fetchForgejoUser, getForgejoInstanceUrl, requestForgejoToken } from '../../utils/forgejo'
 
 export interface OAuthForgejoConfig {
   /**
@@ -175,6 +176,13 @@ export default eventHandler(async (event: H3Event) => {
     email: user.email,
     provider: 'forgejo',
   })
+
+  if (token.refresh_token) {
+    await setStudioOAuthTokens(event, {
+      refreshToken: token.refresh_token,
+      expiresAt: computeExpiresAt(token.expires_in),
+    })
+  }
 
   const redirect = decodeURIComponent(getCookie(event, 'studio-redirect') || '/')
   deleteCookie(event, 'studio-redirect')

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { FetchError } from 'ofetch'
-import { fetchForgejoUser, getForgejoInstanceUrl, requestForgejoToken, resolveForgejoRepositoryInstanceUrl } from '../../src/runtime/server/utils/forgejo'
+import { computeExpiresAt, fetchForgejoUser, getForgejoInstanceUrl, requestForgejoToken, resolveForgejoRepositoryInstanceUrl } from '../../src/runtime/server/utils/forgejo'
 
 describe('requestForgejoToken', () => {
   const mockFetch = vi.fn()
@@ -57,6 +57,16 @@ describe('fetchForgejoUser', () => {
     expect(mockFetch).toHaveBeenCalledWith('https://git.example.com/api/v1/user', expect.objectContaining({
       headers: { Authorization: 'Bearer a' },
     }))
+  })
+})
+
+describe('computeExpiresAt', () => {
+  it('returns the absolute expiration timestamp in ms', () => {
+    expect(computeExpiresAt(3600, 1_000)).toBe(3_601_000)
+  })
+
+  it('returns undefined when expiresIn is not set', () => {
+    expect(computeExpiresAt(undefined, 1_000)).toBeUndefined()
   })
 })
 

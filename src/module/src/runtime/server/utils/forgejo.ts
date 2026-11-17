@@ -26,7 +26,7 @@ export interface ForgejoUser {
 }
 
 /**
- * Exchange an authorization code for a Forgejo access token.
+ * Exchange an authorization code (or refresh token) for a Forgejo access token.
  * @param instanceUrl The Forgejo instance base URL, without a trailing slash.
  * @param body The OAuth token request body (e.g. `grant_type`, `code`, `client_id`, ...).
  * @returns The token response, or an error payload instead of throwing.
@@ -63,6 +63,16 @@ export async function fetchForgejoUser(instanceUrl: string, accessToken: string)
       Authorization: `Bearer ${accessToken}`,
     },
   })
+}
+
+/**
+ * Compute the absolute expiration timestamp of a Forgejo access token.
+ * @param expiresIn The token lifetime in seconds, as returned by the token endpoint.
+ * @param now The current time in ms, defaults to `Date.now()`.
+ * @returns The absolute expiration timestamp in ms, or `undefined` if `expiresIn` is not set.
+ */
+export function computeExpiresAt(expiresIn: number | undefined, now: number = Date.now()): number | undefined {
+  return expiresIn === undefined ? undefined : now + expiresIn * 1000
 }
 
 /**
